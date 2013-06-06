@@ -28,12 +28,12 @@ func (z intNode) Color() Color              { return z.color }
 func (z *intNode) SetColor(cl Color)        { (*z).color = cl }
 func (z *intNode) SetValue(nd Node)         { z.val = nd.(*intNode).val }
 
-func HarmlessTest(t *testing.T) {
+func TestHarmess(t *testing.T) {
 	var set SortedSet
 	_, found := Search(set, &intNode{val: 2})
 	if found {
 		t.Errorf("expecting to not find 2, but did.")
-	}
+	} 
 
 	Insert(&set, &intNode{val: 1})
 	if l := Len(set); l != 1 {
