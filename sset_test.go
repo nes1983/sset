@@ -1,5 +1,9 @@
 package sset
 
+// Copyright (C) 2013 Niko Schwarz  
+// Free Software. There should be a COPYING file around.
+// If not, see <http://www.gnu.org/licenses/>. 
+
 import "testing"
 
 type intNode struct {
