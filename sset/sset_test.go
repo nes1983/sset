@@ -54,3 +54,10 @@ func TestHarmess(t *testing.T) {
 		t.Errorf("expecting to not find 2, but did.")
 	}
 }
+
+func BenchmarkInsert(b *testing.B) {
+	var set SortedSet
+	for i := 0; i < b.N; i++ {
+		Insert(&set, &intNode{val: b.N - i})
+	}
+}

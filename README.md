@@ -46,3 +46,5 @@ For an example of how to use it, see the unit test. In a nutshell:
 			t.Errorf("Expecting to find key 1, but was %d", actual.(*intNode).val)
 		}
 	}
+
+Get using `go get github.com/nes1983/sset/sset`
