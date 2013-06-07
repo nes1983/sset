@@ -1,152 +1,152 @@
 package sset
 
-// Copyright (C) 2013 Niko Schwarz 
-// Free Software. There should be a COPYING file around.
-// If not, see <http://www.gnu.org/licenses/>. 
+//import "log"
 
 const (
-	RED   Color = true
-	BLACK Color = false
+	red   color = false // This must be the default.
+	black color = true
 )
 
-type Color bool
+type color bool
 
+// Node must be implemented by nodes of the set.
 type Node interface {
-	// -1, if z < nd, 0 if z == nd, 1 if z > nd.
+	// GetNodeInfo returns the node's set metadata.
+	// It is usually implemented by embedding NodeInfo.
+	GetNodeInfo() *NodeInfo
+
+	// Cmp returns -1, if z < nd, 0 if z == nd, 1 if z > nd.
 	Cmp(nd Node) int
-	Left() (nd Node, ok bool)
-	Right() (nd Node, ok bool)
-	SetLeft(Node)
-	SetRight(Node)
-	Color() Color
-	SetColor(Color)
-	// Update the value to that of nd. Don't change Left or Right.
+
+	// SetValue updates the value to that of nd.
 	SetValue(nd Node)
 }
 
+// NodeInfo holds a node's set metadata.
+type NodeInfo struct {
+	left, right Node
+	color       color
+}
+
+func (info *NodeInfo) GetNodeInfo() *NodeInfo {
+	return info
+}
+
+func nodeInfo(h Node) *NodeInfo {
+	if h == nil {
+		return nil
+	}
+	return h.GetNodeInfo()
+}
+
+// SortedSet holds a set of nodes.
 type SortedSet struct {
-	root *Node
+	root Node
 }
 
-func Search(set SortedSet, nd Node) (Node, bool) {
+// Get returns a Node with the same value as nd,
+// or nil if none was found.
+func (set *SortedSet) Get(nd Node) Node {
 	if set.root == nil {
-		return nil, false
+		return nil
 	}
 
-	x := *set.root
+	x := set.root
 	for {
-		var ok bool
 		cmp := x.Cmp(nd)
-		switch {
-		case cmp == 0:
-			return x, true
-		case cmp < 0:
-			x, ok = x.Left()
-		case cmp > 0:
-			x, ok = x.Right()
+		if cmp == 0 {
+			return x
 		}
-		if !ok {
-			return nil, false
+		info := x.GetNodeInfo()
+		if cmp < 0 {
+			x = info.left
+		} else {
+			x = info.right
+		}
+		if x == nil {
+			return nil
 		}
 	}
 }
 
-func Len(set SortedSet) int {
-	if set.root == nil {
+// Len returns the number of elements in the set.
+func (set *SortedSet) Len() int {
+	return nodeLen(set.root)
+}
+
+func nodeLen(h Node) int {
+	if h == nil {
 		return 0
 	}
-	return nodeLen(*set.root)
+	info := h.GetNodeInfo()
+	return 1 + nodeLen(info.left) + nodeLen(info.right)
 }
 
-func nodeLen(h Node) (ret int) {
-	ret = 1
-	if l, ok := h.Left(); ok {
-		ret += nodeLen(l)
-	}
-	if r, ok := h.Right(); ok {
-		ret += nodeLen(r)
-	}
-	return
-}
-
-func Insert(set *SortedSet, nd Node) {
-	_, leftOk := nd.Left()
-	_, rightOk := nd.Right()
-	if leftOk || rightOk {
+// Insert adds the given node to the set. If a node
+// already exists with the same value, it will be
+// changed to nd's value.
+func (set *SortedSet) Insert(nd Node) {
+	info := nd.GetNodeInfo()
+	if info.left != nil || info.right != nil {
 		panic("Nodes to be inserted should be nude, but weren't.")
 	}
-	if set.root == nil {
-		set.root = &nd
-	} else {
-		i := insert(*set.root, nd)
-		set.root = &i // Must be on different lines: can't take pointer of ret val.
-	}
-	(*set.root).SetColor(BLACK)
+	set.root = insert(set.root, nd)
+	set.root.GetNodeInfo().color = black
 }
 
 func insert(h Node, in Node) Node {
-	l, okL := h.Left()
-	r, okR := h.Right()
-
-	if okL && okR && l.Color() == RED && r.Color() == RED {
-		colorFlip(h)
+	if h == nil {
+		return in
 	}
-	if cmp := in.Cmp(h); cmp == 0 {
+	hinfo := h.GetNodeInfo()
+	l, r := nodeInfo(hinfo.left), nodeInfo(hinfo.right)
+	if l != nil && r != nil && l.color == red && r.color == red {
+		colorFlip(hinfo, l, r)
+	}
+	if cmp := h.Cmp(in); cmp == 0 {
 		h.SetValue(in)
-	} else if okL && cmp < 0 {
-		h.SetLeft(insert(l, in))
-	} else if okR {
-		h.SetRight(insert(r, in))
+	} else if cmp < 0 {
+		hinfo.left = insert(hinfo.left, in)
+		l = nodeInfo(hinfo.left)
+	} else {
+		hinfo.right = insert(hinfo.right, in)
+		r = nodeInfo(hinfo.right)
 	}
 
-	if okL && okR && r.Color() == RED && !l.Color() == RED {
-		h = rotateLeft(h)
+	if r != nil && r.color == red && !(l != nil && l.color == red) {
+		h = rotateLeft(h, hinfo, r)
+		hinfo = h.GetNodeInfo()
+		l, r = nodeInfo(hinfo.left), nodeInfo(hinfo.right)
 	}
-	if okL {
-		if ll, okLL := l.Left(); okLL && l.Color() == RED && ll.Color() == RED {
-			h = rotateRight(h)
+	if l != nil && l.left != nil {
+		ll := l.left.GetNodeInfo()
+		if l.color == red && ll.color == red {
+			h = rotateRight(h, hinfo, l)
 		}
 	}
 	return h
 }
 
-func rotateLeft(h Node) (x Node) {
-	var okX bool
-	x, okX = h.Right()
-	l, okL := x.Left()
-	if !okX || !okL {
-		panic("For rotation, children must be there")
-	}
-
-	h.SetRight(l)
-	x.SetLeft(h)
-	x.SetColor(h.Color())
-	h.SetColor(RED)
-	return
+func rotateLeft(h Node, hinfo, rinfo *NodeInfo) Node {
+	x := hinfo.right
+	hinfo.right = rinfo.left
+	rinfo.left = h
+	rinfo.color = hinfo.color
+	hinfo.color = red
+	return x
 }
 
-func rotateRight(h Node) (x Node) {
-	var okX bool
-	x, okX = h.Left()
-	r, okR := x.Right()
-	if !okX || !okR {
-		panic("For rotation, children must be there")
-	}
-
-	h.SetLeft(r)
-	x.SetRight(h)
-	x.SetColor(h.Color())
-	h.SetColor(RED)
-	return
+func rotateRight(h Node, hinfo, linfo *NodeInfo) Node {
+	x := hinfo.left
+	hinfo.left = linfo.right
+	linfo.right = h
+	linfo.color = hinfo.color
+	hinfo.color = red
+	return x
 }
 
-func colorFlip(h Node) {
-	r, okR := h.Right()
-	l, okL := h.Left()
-	if !okL || !okR {
-		panic("For rotation, children must be there")
-	}
-	h.SetColor(!h.Color())
-	l.SetColor(!l.Color())
-	r.SetColor(!r.Color())
+func colorFlip(hinfo, l, r *NodeInfo) {
+	hinfo.color = !hinfo.color
+	l.color = !l.color
+	r.color = !r.color
 }
