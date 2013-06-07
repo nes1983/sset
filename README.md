@@ -1,5 +1,5 @@
 sset, SortedSet, implemented as a left-leaning red-black tree (LLRB)
-====
+==================================================================== 
 
 Based Left-leaning Red-Black Trees, by Robert Sedgewick, doi://10.1.1.139.282.
 
@@ -48,3 +48,6 @@ For an example of how to use it, see the unit test. In a nutshell:
 	}
 
 Get using `go get github.com/nes1983/sset`
+
+
+You can contact me at [niko.schwarz@me.com](mailto:niko.schwarz@me.com)
