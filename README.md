@@ -47,4 +47,4 @@ For an example of how to use it, see the unit test. In a nutshell:
 		}
 	}
 
-Get using `go get github.com/nes1983/sset/sset`
+Get using `go get github.com/nes1983/sset`
