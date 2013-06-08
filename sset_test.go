@@ -9,8 +9,9 @@ type intNode struct {
 	val int
 }
 
+// Cmp returns -1, if z < nd, 0 if z == nd, 1 if z > nd.
 func (z *intNode) Cmp(nd Node) int {
-	return z.val - nd.(*intNode).val
+	return z.val - nd.(*intNode).val  
 }
 func (z *intNode) SetValue(nd Node) {
 	z.val = nd.(*intNode).val
@@ -240,6 +241,35 @@ func TestInsertion(t *testing.T) {
 		}
 	}
 	// TODO:
-	//		failed = failed || !c.Check(t.isBST(), check.Equals, true)
 	//		failed = failed || !c.Check(t.is23_234(), check.Equals, true)
+}
+
+
+// Are all the values in the BST rooted at x between min and max,
+// and does the same property hold for both subtrees?
+func isBST(n Node, min, max Node) bool {
+	if n == nil {
+		return true
+	}
+	if n.Cmp(min) < 0 || n.Cmp(max) > 0 {
+		return false
+	}
+
+	return isBST(n.GetNodeInfo().left, min, n) && isBST(n.GetNodeInfo().right, n, max)
+}
+
+func minimum(n Node) Node {
+	for l := n; l != nil; l = n.GetNodeInfo().left {
+		n = l
+	}
+
+	return n
+}
+
+func maximum(n Node) Node {
+	for l := n; l != nil; l = n.GetNodeInfo().right {
+		n = l
+	}
+
+	return n
 }

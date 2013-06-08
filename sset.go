@@ -53,7 +53,7 @@ func (set *SortedSet) Get(nd Node) Node {
 
 	x := set.root
 	for {
-		cmp := x.Cmp(nd)
+		cmp := nd.Cmp(x)
 		if cmp == 0 {
 			return x
 		}
@@ -74,34 +74,6 @@ func (set *SortedSet) Len() int {
 	return nodeLen(set.root)
 }
 
-// Are all the values in the BST rooted at x between min and max,
-// and does the same property hold for both subtrees?
-func isBST(n Node, min, max Node) bool {
-	if n == nil {
-		return true
-	}
-	if n.Cmp(min) < 0 || n.Cmp(max) > 0 {
-		return false
-	}
-
-	return isBST(n.GetNodeInfo().left, min, n) && isBST(n.GetNodeInfo().right, n, max)
-}
-
-func minimum(n Node) Node {
-	for l := n; l != nil; l = n.GetNodeInfo().left {
-		n = l
-	}
-
-	return n
-}
-
-func maximum(n Node) Node {
-	for l := n; l != nil; l = n.GetNodeInfo().right {
-		n = l
-	}
-
-	return n
-}
 
 func nodeLen(h Node) int {
 	if h == nil {
@@ -132,7 +104,7 @@ func insert(h Node, in Node) Node {
 	if l != nil && r != nil && l.color == red && r.color == red {
 		colorFlip(hinfo, l, r)
 	}
-	if cmp := h.Cmp(in); cmp == 0 {
+	if cmp := in.Cmp(h); cmp == 0 {
 		h.SetValue(in)
 	} else if cmp < 0 {
 		hinfo.left = insert(hinfo.left, in)
