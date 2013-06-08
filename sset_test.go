@@ -222,16 +222,21 @@ func TestRotateLeft(t *testing.T) {
 }
 
 func TestInsertion(t *testing.T) {
-	min, max := 1, 1000
+	min := int('a')
+	max := min + 1000
 	var set SortedSet
 	for i := min; i <= max; i++ {
 		set.Insert(&intNode{val: i})
-		if actual := set.Len(); actual != i {
-			t.Errorf("Length should be %v, but was %v", i, actual)
+		expected := i - min + 1
+		if actual := set.Len(); actual != expected {
+			t.Errorf("Length should be %v, but was %v", expected, actual)
 		}
 		if !set.isBalanced() {
-			t.Errorf("Length: %v", set.Len())
-			t.Fatalf("Tree should be balanced, but wasn't. Tree: %v", describeTree(&set.root, true))
+			t.Fatal("Tree should be balanced, but wasn't. Tree: ", describeTree(&set.root, true))
+		}
+		if !isBST(set.root, minimum(set.root), maximum(set.root)) {
+			t.Error("Length: ", set.Len())
+			t.Fatal("Tree should be BST, but wasn't. Tree: ", describeTree(&set.root, false))
 		}
 	}
 	// TODO:
