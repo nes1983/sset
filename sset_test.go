@@ -101,16 +101,13 @@ func TestMakeAndDescribeTree(t *testing.T) {
 }
 
 func BenchmarkGet(b *testing.B) {
-	//	b.StopTimer()
+	b.StopTimer()
 	var t SortedSet
 	for i := 0; i < b.N; i++ {
 		t.Insert(&intNode{val: b.N - i})
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		if i%1000 == 0 {
-			//			log.Printf("%d", i)
-		}
 		t.Get(&intNode{val: i})
 	}
 }
