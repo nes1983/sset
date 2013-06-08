@@ -54,16 +54,33 @@ func TestHarmless(t *testing.T) {
 		t.Errorf("Expecting len to be 5, but was %v", l)
 	}
 
-	expected := "((a,c)b,e)d;"
-	if actual := describeTree(&set.root, false); actual != expected {
-		t.Error("set should have shape %v, but was %v", expected, actual)
+	checkTreeShape(t, describeTree(&set.root, false), "(a,(c,e)d)b;")
+}
+
+func checkTreeShape(t *testing.T, actual, expected string) {
+	if actual != expected {
+		t.Errorf("set should have shape %v, but was %v", expected, actual)
 	}
 }
 
-func BenchmarkInsert(b *testing.B) {
-	var t SortedSet
-	for i := 0; i < b.N; i++ {
-		t.Insert(&intNode{val: b.N - i})
+func TestReverseInsertHarmless(t *testing.T) {
+	var set SortedSet
+	set.Insert(&intNode{val: int('e')})
+	set.Insert(&intNode{val: int('d')})
+	set.Insert(&intNode{val: int('c')})
+	checkTreeShape(t, describeTree(&set.root, false), "(c,e)d;")
+
+	set.Insert(&intNode{val: int('b')})
+	checkTreeShape(t, describeTree(&set.root, true), "((br,)cb,eb)db;")
+
+	set.Insert(&intNode{val: int('a')})
+	checkTreeShape(t, describeTree(&set.root, false), "((a,c)b,e)d;")
+}
+
+func BenchmarkInsert(t *testing.B) {
+	var set SortedSet
+	for i := 0; i < t.N; i++ {
+		set.Insert(&intNode{val: t.N - i})
 	}
 }
 
@@ -244,7 +261,7 @@ func TestInsertion(t *testing.T) {
 		if !isBST(set.root, minimum(set.root), maximum(set.root)) {
 			t.Fatal("Tree should be BST, but wasn't. Tree: ", describeTree(&set.root, false))
 		}
-		if !is23(set.root) {
+		if !is234(set.root) {
 			t.Fatal("Tree should be 23, but wasn't. Tree: ", describeTree(&set.root, true))
 		}
 	}
@@ -275,20 +292,18 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func is23(n Node) bool {
+func is234(n Node) bool {
 	if n == nil {
 		return true
 	}
 
-	// If the node has two children, only one of them may be red.
-	// The other must be black...
-	l, r := n.GetNodeInfo().left, n.GetNodeInfo().right
-	if l != nil && r != nil &&
-		l.GetNodeInfo().color == red && r.GetNodeInfo().color == red {
+	info := n.GetNodeInfo()
+	if info.left != nil && info.right != nil &&
+		info.left.GetNodeInfo().color == red && info.left.GetNodeInfo().color == black {
 		return false
 	}
 
-	return is23(l) && is23(r)
+	return is234(info.left) && is234(info.right)
 }
 
 // Are all the values in the BST rooted at x between min and max,

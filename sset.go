@@ -1,7 +1,5 @@
 package sset
 
-//import "log"
-
 const (
 	red   color = false // This must be the default.
 	black color = true
@@ -101,6 +99,10 @@ func insert(h Node, in Node) Node {
 	hinfo := h.GetNodeInfo()
 	l, r := nodeInfo(hinfo.left), nodeInfo(hinfo.right)
 
+	if l != nil && r != nil && l.color == red && r.color == red {
+		colorFlip(hinfo, l, r)
+	}
+
 	if cmp := in.Cmp(h); cmp == 0 {
 		h.SetValue(in)
 	} else if cmp < 0 {
@@ -110,7 +112,7 @@ func insert(h Node, in Node) Node {
 		hinfo.right = insert(hinfo.right, in)
 		r = nodeInfo(hinfo.right)
 	}
-
+	
 	if r != nil && r.color == red && !(l != nil && l.color == red) {
 		h = rotateLeft(h, hinfo, r)
 		hinfo = h.GetNodeInfo()
@@ -121,10 +123,6 @@ func insert(h Node, in Node) Node {
 		if l.color == red && ll.color == red {
 			h = rotateRight(h, hinfo, l)
 		}
-	}
-
-	if l != nil && r != nil && l.color == red && r.color == red {
-		colorFlip(hinfo, l, r)
 	}
 
 	return h
