@@ -74,7 +74,6 @@ func (set *SortedSet) Len() int {
 	return nodeLen(set.root)
 }
 
-
 func nodeLen(h Node) int {
 	if h == nil {
 		return 0
@@ -101,9 +100,7 @@ func insert(h Node, in Node) Node {
 	}
 	hinfo := h.GetNodeInfo()
 	l, r := nodeInfo(hinfo.left), nodeInfo(hinfo.right)
-	if l != nil && r != nil && l.color == red && r.color == red {
-		colorFlip(hinfo, l, r)
-	}
+
 	if cmp := in.Cmp(h); cmp == 0 {
 		h.SetValue(in)
 	} else if cmp < 0 {
@@ -125,6 +122,11 @@ func insert(h Node, in Node) Node {
 			h = rotateRight(h, hinfo, l)
 		}
 	}
+
+	if l != nil && r != nil && l.color == red && r.color == red {
+		colorFlip(hinfo, l, r)
+	}
+
 	return h
 }
 

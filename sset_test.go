@@ -11,7 +11,7 @@ type intNode struct {
 
 // Cmp returns -1, if z < nd, 0 if z == nd, 1 if z > nd.
 func (z *intNode) Cmp(nd Node) int {
-	return z.val - nd.(*intNode).val  
+	return z.val - nd.(*intNode).val
 }
 func (z *intNode) SetValue(nd Node) {
 	z.val = nd.(*intNode).val
@@ -24,34 +24,39 @@ func TestHarmless(t *testing.T) {
 		t.Errorf("expecting to not find 2, but did.")
 	}
 
-	set.Insert(&intNode{val: 1})
+	set.Insert(&intNode{val: int('a')})
 	if l := set.Len(); l != 1 {
 		t.Errorf("expecting len 1, but got %d", l)
 	}
-	set.Insert(&intNode{val: 1})
+	set.Insert(&intNode{val: int('a')})
 	if l := set.Len(); l != 1 {
 		t.Errorf("expecting len 1, but got %d", l)
 	}
-	set.Insert(&intNode{val: 2})
+	set.Insert(&intNode{val: int('b')})
 	if l := set.Len(); l != 2 {
 		t.Errorf("expecting len 2, but got %d", l)
 	}
-	actual := set.Get(&intNode{val: 1})
+	actual := set.Get(&intNode{val: int('a')})
 	if actual == nil {
 		t.Errorf("expecting to find key, but was none.")
-	} else if actual.(*intNode).val != 1 {
+	} else if actual.(*intNode).val != int('a') {
 		t.Errorf("Expecting to find key 1, but was %d", actual.(*intNode).val)
 	}
 
-	if actual := set.Get(&intNode{val: 3}); actual != nil {
-		t.Errorf("expecting to not find 2, but found %v.", actual)
+	if actual := set.Get(&intNode{val: int('c')}); actual != nil {
+		t.Errorf("Never added it, but still got %v.", actual)
 	}
-	set.Insert(&intNode{val: 3})
-	set.Insert(&intNode{val: 4})
-	set.Insert(&intNode{val: 5})
+	set.Insert(&intNode{val: int('c')})
+	set.Insert(&intNode{val: int('d')})
+	set.Insert(&intNode{val: int('e')})
 
 	if l := set.Len(); l != 5 {
 		t.Errorf("Expecting len to be 5, but was %v", l)
+	}
+
+	expected := "((a,c)b,e)d;"
+	if actual := describeTree(&set.root, false); actual != expected {
+		t.Error("set should have shape %v, but was %v", expected, actual)
 	}
 }
 
@@ -228,22 +233,63 @@ func TestInsertion(t *testing.T) {
 	var set SortedSet
 	for i := min; i <= max; i++ {
 		set.Insert(&intNode{val: i})
-		expected := i - min + 1
-		if actual := set.Len(); actual != expected {
+
+		if actual, expected := set.Len(), i-min+1; actual != expected {
 			t.Errorf("Length should be %v, but was %v", expected, actual)
 		}
+
 		if !set.isBalanced() {
 			t.Fatal("Tree should be balanced, but wasn't. Tree: ", describeTree(&set.root, true))
 		}
 		if !isBST(set.root, minimum(set.root), maximum(set.root)) {
-			t.Error("Length: ", set.Len())
 			t.Fatal("Tree should be BST, but wasn't. Tree: ", describeTree(&set.root, false))
 		}
+		if !is23(set.root) {
+			t.Fatal("Tree should be 23, but wasn't. Tree: ", describeTree(&set.root, true))
+		}
 	}
-	// TODO:
-	//		failed = failed || !c.Check(t.is23_234(), check.Equals, true)
 }
 
+func TestGet(t *testing.T) {
+	min := int('a')
+	max := min + 1000
+	var set SortedSet
+
+	for i := min; i <= max; i++ {
+		if i&1 == 0 {
+			set.Insert(&intNode{val: i})
+		}
+	}
+
+	for i := min; i <= max; i++ {
+		desc := describeTree(&set.root, false)
+		if i&1 == 0 {
+			if actual := set.Get(&intNode{val: i}).(*intNode).val; actual != i {
+				t.Errorf("Expected to find %v in set, but instead got %v. Tree: %v", i, actual, desc)
+			}
+		} else {
+			if actual := set.Get(&intNode{val: i}); actual != nil {
+				t.Errorf("Should not have found %v in set, but did. Tree: %v", i, desc)
+			}
+		}
+	}
+}
+
+func is23(n Node) bool {
+	if n == nil {
+		return true
+	}
+
+	// If the node has two children, only one of them may be red.
+	// The other must be black...
+	l, r := n.GetNodeInfo().left, n.GetNodeInfo().right
+	if l != nil && r != nil &&
+		l.GetNodeInfo().color == red && r.GetNodeInfo().color == red {
+		return false
+	}
+
+	return is23(l) && is23(r)
+}
 
 // Are all the values in the BST rooted at x between min and max,
 // and does the same property hold for both subtrees?
@@ -251,6 +297,7 @@ func isBST(n Node, min, max Node) bool {
 	if n == nil {
 		return true
 	}
+
 	if n.Cmp(min) < 0 || n.Cmp(max) > 0 {
 		return false
 	}
@@ -262,7 +309,6 @@ func minimum(n Node) Node {
 	for l := n; l != nil; l = n.GetNodeInfo().left {
 		n = l
 	}
-
 	return n
 }
 
@@ -270,6 +316,5 @@ func maximum(n Node) Node {
 	for l := n; l != nil; l = n.GetNodeInfo().right {
 		n = l
 	}
-
 	return n
 }
